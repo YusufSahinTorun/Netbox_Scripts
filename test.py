@@ -1,43 +1,23 @@
+from extras.scripts import *
+from ipam.models import IPAddress
 import random
 
-from netbox.scripts import Script, ObjectVar, StringVar
-from ipam.models import IPAddress
+class RandomIPScript(Script):
 
-class RandomIPCreator(Script):
     class Meta:
-        name = "Rastgele IP Oluşturucu"
-        description = "Rastgele bir IP adresi oluşturur ve Netbox'a kaydeder."
-
-    # Script parametreleri
-    ip_version = ObjectVar(
-        model='ipam.ipaddress',
-        label="IP Versiyonu",
-        query_params={
-            'family': '4' # Sadece IPv4 için
-        }
-    )
-
-    description = StringVar(
-        description="Oluşturulacak IP adresi için açıklama"
-    )
+        name = "Random IP Creator"
+        description = "Adds a random IP address from 192.168.0.0/24"
 
     def run(self, data, commit):
-        # Rastgele IP adresi oluştur
-        ip_octets = [str(random.randint(1, 254)) for _ in range(4)]
-        random_ip = ".".join(ip_octets) + "/24"
 
-        # IPAddress modelini oluştur
-        try:
-            ip_address = IPAddress(
-                address=random_ip,
-                description=data['description']
-            )
-            ip_address.save()
+        # Random IP seç (192.168.0.1 - 192.168.0.254 arası)
+        last_octet = random.randint(1, 254)
+        ip_str = f"192.168.0.{last_octet}/24"
 
-            self.log_success(f"Başarılı: Yeni IP adresi oluşturuldu: {ip_address}")
+        # IP nesnesini oluştur
+        ip = IPAddress(address=ip_str)
+        ip.save()
 
-        except Exception as e:
-            self.log_failure(f"Hata: IP adresi oluşturulamadı - {e}")
+        self.log_success(f"Created random IP: {ip}")
 
-        if not commit:
-            self.log_info("Dry run: Veritabanına değişiklik kaydedilmedi.")
+        return f"Random IP added: {ip}"
